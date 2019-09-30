@@ -39,13 +39,19 @@ void nsq::NsqClient::connectToNsq(uv::SocketAddr & addr)
 
 void NsqClient::onMessage(const char* data, ssize_t size)
 {
+    std::string logInfo("receive from nsq server: ");
+    uv::LogWriter::ToHex(logInfo, data, size);
+    uv::LogWriter::Instance()->debug("");
     DataFormat message;
     if (message.decode(data, (uint32_t)size) > 0)
     {
         switch (message.FrameType())
         {
         case DataFormat::FrameTypeResponse:
-            ifOnHeartbeat(message.MessageBody());
+            if (ifOnHeartbeat(message.MessageBody()))
+            {
+                break;
+            }
             if (onResp_)
             {
                 onResp_(message.MessageBody());
@@ -122,6 +128,7 @@ void NsqClient::onConnectStatus(TcpClient::ConnectStatus status)
                 delete ptr;
             });
         });
+        ptr->start();
     }
     else
     {
@@ -131,13 +138,14 @@ void NsqClient::onConnectStatus(TcpClient::ConnectStatus status)
         nextCallback_(status);
 }
 
-void nsq::NsqClient::ifOnHeartbeat(std::string& body)
+bool nsq::NsqClient::ifOnHeartbeat(std::string& body)
 {
     if (body == ProtocolRespHeartbeat)
     {
         sendProtocolDefault<CommandNOP>();
+        return true;
     }
-
+    return false;
 }
 
 

@@ -46,7 +46,7 @@ public:
 private:
     void onConnectStatus(uv::TcpClient::ConnectStatus status);
 
-    void ifOnHeartbeat(std::string& body);
+    bool ifOnHeartbeat(std::string& body);
 
     std::shared_ptr<uv::SocketAddr> addr_;
     OnNsqMessage onMessage_;
