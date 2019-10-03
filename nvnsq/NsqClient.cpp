@@ -39,9 +39,6 @@ void nsq::NsqClient::connectToNsq(uv::SocketAddr & addr)
 
 void NsqClient::onMessage(const char* data, ssize_t size)
 {
-    std::string logInfo("receive from nsq server: ");
-    uv::LogWriter::ToHex(logInfo, data, size);
-    uv::LogWriter::Instance()->debug("");
     DataFormat message;
     if (message.decode(data, (uint32_t)size) > 0)
     {
