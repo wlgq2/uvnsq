@@ -1,4 +1,4 @@
-/*
+﻿/*
    Copyright ©2019, orcaer@yeah All rights reserved.
 
    Author: hebaichuan
@@ -39,6 +39,10 @@ void nsq::NsqClient::connectToNsq(uv::SocketAddr & addr)
 
 void NsqClient::onMessage(const char* data, ssize_t size)
 {
+    std::string logInfo("receive message hex: ");
+    uv::LogWriter::ToHex(logInfo, data, size);
+    uv::LogWriter::Instance()->debug(logInfo);
+
     DataFormat message;
     if (message.decode(data, (uint32_t)size) > 0)
     {

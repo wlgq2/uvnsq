@@ -1,4 +1,4 @@
-/*
+﻿/*
    Copyright ©2019, orcaer@yeah All rights reserved.
 
    Author: hebaichuan
@@ -9,7 +9,7 @@
 */
 
 #include <string>
-#include <json/json.h>
+#include <json/json.hpp>
 #include <uv/uv11.h>
 
 #include "NsqLookupd.h"
@@ -40,22 +40,21 @@ int nsq::NsqLookupd::GetNodes(std::string&& url, std::vector<NsqNode>& nodes)
     std::string context;
     auto code = NsqLookupd::HttpGet(std::move(url), header, context);
 
-    Json::Reader reader;
-    Json::Value root;
-    if (reader.parse(context, root))
+    try
     {
+        auto root = nlohmann::json::parse(context);
         auto nodesCnt = root["producers"].size();
         auto& producers = root["producers"];
         for (auto i = 0; i < nodesCnt; i++)
         {
             NsqNode node;
-            node.remoteaddr = producers[i]["remote_address"].asString();
-            node.httpport = producers[i]["http_port"].asInt();
-            node.tcpport = producers[i]["tcp_port"].asInt();
+            node.remoteaddr = producers[i]["remote_address"].get<std::string>();
+            node.httpport = producers[i]["http_port"].get<uint16_t>();
+            node.tcpport = producers[i]["tcp_port"].get<uint16_t>();
             nodes.push_back(node);
         }
     }
-    else
+    catch (...)
     {
         uv::LogWriter::Instance()->error("parse node's json fail.");
     }
