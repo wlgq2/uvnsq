@@ -1,4 +1,4 @@
-#include <iostream>
+﻿#include <iostream>
 #include <nsq/NsqProducer.h>
 #include <nsq/NsqConsumer.h>
 #include <nsq/NsqLookupd.h>
@@ -11,7 +11,7 @@ void runProducer(std::string ip,uint16_t port)
     uv::EventLoop loop;
     uv::SocketAddr addr(ip, port);
     NsqProducer producer(&loop, addr);
-    uv::Timer timer(&loop, 1600, 1600, [&producer](uv::Timer* timer)
+    uv::Timer timer(&loop, 1000, 2000, [&producer](uv::Timer* timer)
     {
         producer.pub("test", "test message.");
     });
@@ -46,15 +46,20 @@ void runConsumers(std::string ip, uint16_t port,std::vector<std::string>& channe
 
 int main(int argc, char** args)
 {
+    uv::LogWriter::Instance()->setLevel(uv::LogWriter::Info);
+    
     std::vector<NsqNode> nodes;
-    auto code = NsqLookupd::GetNodes("http://192.168.72.129:4161/nodes", nodes);   
+    auto code = NsqLookupd::GetNodes("http://127.0.0.1:4161/nodes", nodes);   
 
-    std::string ip("192.168.72.129");
-    uint16_t port = 4150;
-    std::vector<std::string> channels{ "ch1","ch2","ch3" };
-    std::thread t1(std::bind(std::bind(&runConsumers, ip, port, channels)));
-    std::thread t2(std::bind(std::bind(&runProducer, ip, port)));
-    t1.join();
-    t2.join();
+    if (!nodes.empty())
+    {
+        std::string serverip("127.0.0.1");
+        uint16_t port = nodes.front().tcpport;
+        std::vector<std::string> channels{ "ch1","ch2","ch3" };
+        std::thread t1(std::bind(std::bind(&runConsumers, serverip, port, channels)));
+        std::thread t2(std::bind(std::bind(&runProducer, serverip, port)));
+        t1.join();
+        t2.join();
+    }
 }
 
