@@ -12,6 +12,7 @@ Async C++ client library for [NSQ][1]
 [3]: https://curl.haxx.se/libcurl
 [4]: https://github.com/nlohmann/json
 
+## Example
 ```C++
 #include <iostream>
 #include <nsq/NsqProducer.h>
