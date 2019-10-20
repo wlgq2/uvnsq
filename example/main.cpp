@@ -1,7 +1,7 @@
 ﻿#include <iostream>
-#include <nsq/NsqProducer.h>
-#include <nsq/NsqConsumer.h>
-#include <nsq/NsqLookupd.h>
+#include <uvnsq/NsqProducer.h>
+#include <uvnsq/NsqConsumer.h>
+#include <uvnsq/NsqLookupd.h>
 
 using namespace nsq;
 using namespace uv;
@@ -34,7 +34,7 @@ void runConsumers(std::string ip, uint16_t port,std::vector<std::string>& channe
         {
             std::cout<<channel<< " receive" <<" attempts * " << message.Attempts() << " :" << message.MsgBody() << std::endl;
             std::string info("hex: ");
-            uv::LogWriter::ToHex(info, message.MsgID().c_str(), message.MsgID().size());
+            uv::LogWriter::ToHex(info, message.MsgID());
             std::cout << info<<"\n" << std::endl;
             consumer->fin(message.MsgID());
         });

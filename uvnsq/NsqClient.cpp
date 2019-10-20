@@ -40,7 +40,7 @@ void nsq::NsqClient::connectToNsq(uv::SocketAddr & addr)
 void NsqClient::onMessage(const char* data, ssize_t size)
 {
     std::string logInfo("receive message hex: ");
-    uv::LogWriter::ToHex(logInfo, data, size);
+    uv::LogWriter::ToHex(logInfo, data, (unsigned)size);
     uv::LogWriter::Instance()->debug(logInfo);
 
     DataFormat message;
@@ -76,7 +76,7 @@ void NsqClient::onMessage(const char* data, ssize_t size)
                 else
                 {
                     string str("decode message error :");
-                    uv::LogWriter::ToHex(str, message.MessageBody().c_str(), message.MessageBody().size());
+                    uv::LogWriter::ToHex(str, message.MessageBody());
                     uv::LogWriter::Instance()->error(str);
                 }
             }

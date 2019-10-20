@@ -27,7 +27,7 @@ DataFormat::~DataFormat()
 
 uint32_t nsq::DataFormat::Size()
 {
-    return MinMessageSize+ messageBody_.size();
+    return static_cast<uint32_t>( MinMessageSize+ messageBody_.size());
 }
 
 int nsq::DataFormat::decode(const char* data, uint32_t size)
@@ -46,10 +46,10 @@ int nsq::DataFormat::decode(const char* data, uint32_t size)
     }
     index += UnpackNum(index, frameType_);
 
-    uint32_t bodysize = msgSize - 8;
+    uint32_t bodysize = (uint32_t)msgSize - 8;
     std::string body(index, bodysize);
     messageBody_.swap(body);
-    return msgSize;
+    return static_cast<int>(msgSize);
 }
 
 int nsq::DataFormat::encode(char* data, uint32_t size)

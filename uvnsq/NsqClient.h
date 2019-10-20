@@ -61,7 +61,7 @@ inline void NsqClient::sendProtocol(Protocol& msg)
 {
     std::string data;
     msg.pack(data);
-    write(data.c_str(), data.size());
+    write(data.c_str(), (unsigned)(data.size()));
 }
 
 template<typename Protocol>
