@@ -13,6 +13,7 @@
 
 #include <string>
 #include <vector>
+#include <json/json.hpp>
 
 namespace nsq 
 {
@@ -27,8 +28,12 @@ struct NsqNode
 class NsqLookupd 
 {
 public:
-    static long HttpGet(std::string&& url, std::string& header, std::string& resp);
+    static int Get(std::string&& url, nlohmann::json& out);
+    
     static int  GetNodes(std::string&& url, std::vector<NsqNode>& nodes);
+
+private:
+    static long CurlGet(std::string&& url, std::string& header, std::string& resp);
 };
 
 }
