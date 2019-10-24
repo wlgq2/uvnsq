@@ -49,7 +49,7 @@ void NsqClient::onMessage(const char* data, ssize_t size)
     auto packbuf = getCurrentBuf();
     if (packbuf != nullptr)
     {
-        packbuf->append(data, size);
+        packbuf->append(data, (int)size);
         std::string nsqData;
         DataFormat message;
         packbuf->setReadFunc(std::bind(&DataFormat::decodePacketBuf, &message, placeholders::_1, placeholders::_2));

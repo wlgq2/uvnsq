@@ -32,7 +32,7 @@ uint32_t nsq::DataFormat::Size()
 
 int nsq::DataFormat::decodePacketBuf(uv::PacketBuffer* buf, std::string& out)
 {
-    auto size = buf->readSize();
+    uint32_t size = (uint32_t)buf->readSize();
     if (size <= MinMessageSize)
         return -1;
     std::string data;
@@ -53,7 +53,7 @@ int nsq::DataFormat::decodePacketBuf(uv::PacketBuffer* buf, std::string& out)
     if (msgSize > size)
     {
         //包数据长度不够
-        return 0;
+        return -1;
     }
     //清空8位已读字节头部
     buf->clearBufferN(MinMessageSize);
@@ -62,7 +62,7 @@ int nsq::DataFormat::decodePacketBuf(uv::PacketBuffer* buf, std::string& out)
     messageBody_.clear();
     buf->readBufferN(messageBody_, bodysize);
     buf->clearBufferN(bodysize);
-    return msgSize;
+    return (int)msgSize;
 }
 
 int nsq::DataFormat::decode(const char* data, uint32_t size)
