@@ -42,7 +42,6 @@ public:
     template<typename Protocol>
     void sendProtocolDefault();
 
-    
 private:
     void onConnectStatus(uv::TcpClient::ConnectStatus status);
 

@@ -13,6 +13,7 @@
 #define   NSQ_DATA_FORMAT_H
 
 #include <string>
+#include <uv/uv11.h>
 
 namespace nsq
 { 
@@ -24,6 +25,7 @@ public:
     virtual ~DataFormat();
 
     uint32_t Size();
+    int decodePacketBuf(uv::PacketBuffer* buf,std::string& out);
     int decode(const char* data, uint32_t size);
     int  encode(char* data, uint32_t size);
 

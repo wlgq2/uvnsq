@@ -24,6 +24,7 @@ NsqClient::NsqClient(EventLoop* loop)
 {
     setConnectStatusCallback(std::bind(&NsqClient::onConnectStatus, this, std::placeholders::_1));
     setMessageCallback(std::bind(&NsqClient::onMessage,this ,placeholders::_1, placeholders::_2));
+
 }
 
 NsqClient::~NsqClient()
@@ -42,58 +43,60 @@ void NsqClient::onMessage(const char* data, ssize_t size)
     std::string logInfo("receive message hex: ");
     uv::LogWriter::ToHex(logInfo, data, (unsigned)size);
     uv::LogWriter::Instance()->debug(logInfo);
-
-    DataFormat message;
-    if (message.decode(data, (uint32_t)size) > 0)
+    
+    auto packbuf = getCurrentBuf();
+    if (packbuf != nullptr)
     {
-        switch (message.FrameType())
+        packbuf->append(data, size);
+        std::string nsqData;
+        DataFormat message;
+        packbuf->setReadFunc(std::bind(&DataFormat::decodePacketBuf, &message, placeholders::_1, placeholders::_2));
+        while (packbuf->readCustomized(nsqData) > 0)
         {
-        case DataFormat::FrameTypeResponse:
-            if (ifOnHeartbeat(message.MessageBody()))
+            switch (message.FrameType())
             {
+            case DataFormat::FrameTypeResponse:
+                if (ifOnHeartbeat(message.MessageBody()))
+                {
+                    break;
+                }
+                if (onResp_)
+                {
+                    onResp_(message.MessageBody());
+                }
+                break;
+            case DataFormat::FrameTypeError:
+                if (onError_)
+                {
+                    onError_(message.MessageBody());
+                }
+                break;
+            case DataFormat::FrameTypeMessage:
+                if (onMessage_)
+                {
+                    NsqMessage nMsg;
+                    auto rst = nMsg.decode(message.MessageBody());
+                    if (rst == 0)
+                    {
+                        onMessage_(nMsg);
+                    }
+                    else
+                    {
+                        string str("decode message error :");
+                        uv::LogWriter::ToHex(str, message.MessageBody());
+                        uv::LogWriter::Instance()->error(str);
+                    }
+                }
+                break;
+            default:
+                string str("undefined message type :");
+                uv::LogWriter::ToHex(str, data, (unsigned)size);
+                uv::LogWriter::Instance()->error(str);
                 break;
             }
-            if (onResp_)
-            {
-                onResp_(message.MessageBody());
-            }
-            break;
-        case DataFormat::FrameTypeError:
-            if (onError_)
-            {
-                onError_(message.MessageBody());
-            }
-            break;
-        case DataFormat::FrameTypeMessage:
-            if (onMessage_)
-            {
-                NsqMessage nMsg;
-                auto rst = nMsg.decode(message.MessageBody());
-                if (rst == 0)
-                {
-                    onMessage_(nMsg);
-                }
-                else
-                {
-                    string str("decode message error :");
-                    uv::LogWriter::ToHex(str, message.MessageBody());
-                    uv::LogWriter::Instance()->error(str);
-                }
-            }
-            break;
-        default:
-            string str("undefined message type :");
-            uv::LogWriter::ToHex(str, data, (unsigned)size);
-            uv::LogWriter::Instance()->error(str);
-            break;
         }
     }
-    else
-    {
-        string str("message format error :");
-        uv::LogWriter::ToHex(str, data, (unsigned)size);
-        uv::LogWriter::Instance()->error(str);
-    }
+
 }
 
 void NsqClient::setOnNsqMessage(OnNsqMessage callback)
