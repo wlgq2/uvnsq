@@ -40,16 +40,26 @@ void nsq::NsqClient::connectToNsq(uv::SocketAddr& addr)
 
 void NsqClient::onMessage(const char* data, ssize_t size)
 {
-    std::string logInfo("receive message :");
+    std::string logInfo("receive message ");
+    logInfo += std::to_string(size);
+    logInfo += " :";
     logInfo.append(data, size);
-    logInfo.append(" hex :");
+    uv::LogWriter::Instance()->debug(logInfo);
+    
+    logInfo = "hex :";
     uv::LogWriter::ToHex(logInfo, data, (unsigned)size);
     uv::LogWriter::Instance()->debug(logInfo);
     
     auto packbuf = getCurrentBuf();
     if (packbuf != nullptr)
     {
-        packbuf->append(data, (int)size);
+        if (packbuf->append(data, (int)size) < 0)
+        {
+            std::string info("buffer not enough :");
+            info += std::to_string(size);
+            uv::LogWriter::Instance()->error(info);
+            return;
+        }
         std::string nsqData;
         DataFormat message;
         uv::GlobalConfig::ReadBufCallback = std::bind(&DataFormat::decodePacketBuf, &message, placeholders::_1, placeholders::_2);
