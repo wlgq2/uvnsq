@@ -22,9 +22,9 @@ NsqClient::NsqClient(EventLoop* loop)
     onResp_(nullptr),
     onError_(nullptr)
 {
+    UvConfig::RunOnce();
     setConnectStatusCallback(std::bind(&NsqClient::onConnectStatus, this, std::placeholders::_1));
     setMessageCallback(std::bind(&NsqClient::onMessage,this ,placeholders::_1, placeholders::_2));
-
 }
 
 NsqClient::~NsqClient()
@@ -32,7 +32,7 @@ NsqClient::~NsqClient()
 
 }
 
-void nsq::NsqClient::connectToNsq(uv::SocketAddr & addr)
+void nsq::NsqClient::connectToNsq(uv::SocketAddr& addr)
 {
     addr_ = std::make_shared<uv::SocketAddr>(addr);
     connect(*addr_);
@@ -52,8 +52,8 @@ void NsqClient::onMessage(const char* data, ssize_t size)
         packbuf->append(data, (int)size);
         std::string nsqData;
         DataFormat message;
-        packbuf->setReadFunc(std::bind(&DataFormat::decodePacketBuf, &message, placeholders::_1, placeholders::_2));
-        while (packbuf->readCustomized(nsqData) > 0)
+        uv::GlobalConfig::ReadBufCallback = std::bind(&DataFormat::decodePacketBuf, &message, placeholders::_1, placeholders::_2);
+        while (0 == packbuf->readPacket(nsqData))
         {
             switch (message.FrameType())
             {

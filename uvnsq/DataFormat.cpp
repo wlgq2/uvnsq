@@ -39,11 +39,12 @@ int nsq::DataFormat::decodePacketBuf(uv::PacketBuffer* buf, std::string& out)
     buf->readBufferN(data, MinMessageSize);
     UnpackNum(data.c_str(), size_);
     UnpackNum(data.c_str()+sizeof(size_), frameType_);
-    //未知的消息格式错误。情况buf数据重新接受
+    
     if (frameType_ != FrameTypeResponse
         && frameType_ != FrameTypeError
         && frameType_ != FrameTypeMessage)
     {
+        //未知的消息格式错误。清空buf数据重新接受
         uv::LogWriter::Instance()->error("err parse buffer.");
         buf->clear();
         return -1;
@@ -62,7 +63,7 @@ int nsq::DataFormat::decodePacketBuf(uv::PacketBuffer* buf, std::string& out)
     messageBody_.clear();
     buf->readBufferN(messageBody_, bodysize);
     buf->clearBufferN(bodysize);
-    return (int)msgSize;
+    return 0;
 }
 
 int nsq::DataFormat::decode(const char* data, uint32_t size)

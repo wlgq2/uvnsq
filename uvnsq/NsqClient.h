@@ -22,6 +22,21 @@ using OnNsqMessage = std::function<void(NsqMessage&)>;
 using OnNsqResp = std::function<void(std::string&)>;
 using OnNsqError = std::function<void(std::string&)>;
 
+class UvConfig
+{
+public:
+    static UvConfig& RunOnce()
+    {
+        static UvConfig single;
+        return single;
+    }
+private:
+    UvConfig()
+    {
+        uv::GlobalConfig::BufferModeStatus = uv::GlobalConfig::CycleBuffer;
+        uv::GlobalConfig::CycleBufferSize = 1024 * 1024;
+    }
+};
 class NsqClient  : public uv::TcpClient
 {
 public:
