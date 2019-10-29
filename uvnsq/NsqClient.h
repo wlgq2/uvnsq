@@ -12,6 +12,7 @@
 #define   NSQ_CLIENT_H
 
 #include  <uv/uv11.h>
+#include  <functional>
 #include  "NsqMessage.h"
 #include  "DataFormat.h"
 #include  "NsqProtocol.h"
@@ -35,6 +36,7 @@ private:
     {
         uv::GlobalConfig::BufferModeStatus = uv::GlobalConfig::CycleBuffer;
         uv::GlobalConfig::CycleBufferSize = 1024 * 1024;
+        uv::GlobalConfig::ReadBufferVoid = std::bind(&DataFormat::decodePacketBuf, std::placeholders::_1, std::placeholders::_2);
     }
 };
 class NsqClient  : public uv::TcpClient

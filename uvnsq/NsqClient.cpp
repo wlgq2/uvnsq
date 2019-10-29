@@ -60,10 +60,8 @@ void NsqClient::onMessage(const char* data, ssize_t size)
             uv::LogWriter::Instance()->error(info);
             return;
         }
-        std::string nsqData;
         DataFormat message;
-        uv::GlobalConfig::ReadBufCallback = std::bind(&DataFormat::decodePacketBuf, &message, placeholders::_1, placeholders::_2);
-        while (0 == packbuf->readPacket(nsqData))
+        while (0 == packbuf->readGeneric(&message))
         {
             switch (message.FrameType())
             {

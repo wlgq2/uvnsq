@@ -25,7 +25,7 @@ public:
     virtual ~DataFormat();
 
     uint32_t Size();
-    int decodePacketBuf(uv::PacketBuffer* buf,std::string& out);
+
     int decode(const char* data, uint32_t size);
     int  encode(char* data, uint32_t size);
 
@@ -33,7 +33,7 @@ public:
     uint32_t FrameType();
     std::string& MessageBody();
 
-
+    static int decodePacketBuf(uv::PacketBuffer* buf, void* packet);
 public:
     const uint32_t MinMessageSize = 8;
 

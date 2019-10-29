@@ -30,41 +30,6 @@ uint32_t nsq::DataFormat::Size()
     return static_cast<uint32_t>( MinMessageSize+ messageBody_.size());
 }
 
-int nsq::DataFormat::decodePacketBuf(uv::PacketBuffer* buf, std::string& out)
-{
-    uint32_t size = (uint32_t)buf->readSize();
-    if (size <= MinMessageSize)
-        return -1;
-    std::string data;
-    buf->readBufferN(data, MinMessageSize);
-    UnpackNum(data.c_str(), size_);
-    UnpackNum(data.c_str()+sizeof(size_), frameType_);
-    
-    if (frameType_ != FrameTypeResponse
-        && frameType_ != FrameTypeError
-        && frameType_ != FrameTypeMessage)
-    {
-        //未知的消息格式错误。清空buf数据重新接受
-        uv::LogWriter::Instance()->error("err parse buffer.");
-        buf->clear();
-        return -1;
-    }
-    
-    auto msgSize = size_ + sizeof(size_);
-    if (msgSize > size)
-    {
-        //包数据长度不够
-        return -1;
-    }
-    //清空8位已读字节头部
-    buf->clearBufferN(MinMessageSize);
-    uint32_t bodysize = (uint32_t)msgSize - MinMessageSize;
-    //读消息体
-    messageBody_.clear();
-    buf->readBufferN(messageBody_, bodysize);
-    buf->clearBufferN(bodysize);
-    return 0;
-}
 
 int nsq::DataFormat::decode(const char* data, uint32_t size)
 {
@@ -120,4 +85,42 @@ uint32_t  DataFormat::FrameType()
 std::string&  DataFormat::MessageBody()
 {
     return messageBody_;
+}
+
+int nsq::DataFormat::decodePacketBuf(uv::PacketBuffer* buf, void* packet)
+{
+    auto ptr = static_cast<DataFormat*>(packet);
+
+    uint32_t size = (uint32_t)buf->readSize();
+    if (size <= ptr->MinMessageSize)
+        return -1;
+    std::string data;
+    buf->readBufferN(data, ptr->MinMessageSize);
+    UnpackNum(data.c_str(), ptr->size_);
+    UnpackNum(data.c_str() + sizeof(size_), ptr->frameType_);
+
+    if (ptr->frameType_ != FrameTypeResponse
+        && ptr->frameType_ != FrameTypeError
+        && ptr->frameType_ != FrameTypeMessage)
+    {
+        //未知的消息格式错误。清空buf数据重新接受
+        uv::LogWriter::Instance()->error("err parse buffer.");
+        buf->clear();
+        return -1;
+    }
+
+    auto msgSize = ptr->size_ + sizeof(size_);
+    if (msgSize > size)
+    {
+        //包数据长度不够
+        return -1;
+    }
+    //清空8位已读字节头部
+    buf->clearBufferN(ptr->MinMessageSize);
+    uint32_t bodysize = (uint32_t)msgSize - ptr->MinMessageSize;
+    //读消息体
+    ptr->messageBody_.clear();
+    buf->readBufferN(ptr->messageBody_, bodysize);
+    buf->clearBufferN(bodysize);
+    return 0;
 }
