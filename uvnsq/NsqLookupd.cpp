@@ -9,7 +9,7 @@
 */
 
 #include <string>
-#include <uv/uv11.h>
+#include <uv/include/uv11.h>
 
 #include "NsqLookupd.h"
 #include "http/EasyCurl.h"
