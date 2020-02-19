@@ -62,7 +62,7 @@ inline uint64_t DataFormat::UnpackNum(const char* data, NumType& num)
     for (int i = 0; i < size; i++)
     {
         num <<= 8;
-        num |= data[i];
+        num |= (uint8_t)data[i];
     }
     return size;
 }
