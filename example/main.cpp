@@ -20,7 +20,7 @@ void runProducer(std::string ip,uint16_t port)
 }
 
 
-void runConsumers(std::string ip, uint16_t port,std::vector<std::string>& channels)
+void runConsumers(std::string ip, uint16_t port,std::vector<std::string> channels)
 {
     uv::EventLoop loop;
     uv::SocketAddr addr(ip, port);
@@ -58,12 +58,13 @@ int main(int argc, char** args)
             std::string serverip("127.0.0.1");
             uint16_t port = ptr->front().tcpport;
             std::vector<std::string> channels{ "ch1","ch2","ch3" };
-            std::thread t1(std::bind(std::bind(&runConsumers, serverip, port, channels)));
+            std::thread t1(std::bind(std::bind(&runConsumers, serverip, port, std::ref(channels))));
             std::thread t2(std::bind(std::bind(&runProducer, serverip, port)));
-            t1.join();
-            t2.join();
+            t1.detach();
+            t2.detach();
         }
     });
+    uv::Idle idle(&loop);
     loop.run();
 
 
