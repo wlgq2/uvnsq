@@ -48,9 +48,6 @@ int main(int argc, char** args)
 {
     uv::LogWriter::Instance()->setLevel(uv::LogWriter::Info);
     
-    std::vector<NsqNode> nodes;
-    auto code = NsqLookupd::GetNodes("http://127.0.0.1:4161/nodes", nodes);   
-
     uv::EventLoop loop;
     nsq::NsqLookupd lookup(&loop);
 

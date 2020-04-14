@@ -11,7 +11,6 @@
 #include <string>
 
 #include "NsqLookupd.h"
-#include "http/EasyCurl.h"
 
 using namespace std;
 using namespace nsq;
@@ -28,6 +27,7 @@ void NsqLookupd::get(uv::SocketAddr& addr, std::string path, OnLookupCallback ca
         uv::http::HttpClient* client = new uv::http::HttpClient(loop_);
         uv::http::Request req;
         req.setPath((std::string)path);
+        req.appendHead("Host", ((uv::SocketAddr)addr).toStr());
         client->setOnResp([this, callback, client](int status, uv::http::Response* resp)
         {
             if (callback)
@@ -37,8 +37,15 @@ void NsqLookupd::get(uv::SocketAddr& addr, std::string path, OnLookupCallback ca
                     try
                     {
                         JsonPtr ptr = std::make_shared<nlohmann::json>();
-                        *ptr = nlohmann::json::parse(resp->getContent());
-                        callback(ptr);
+                        if (resp->getStatusCode() == uv::http::Response::OK)
+                        {
+                            *ptr = nlohmann::json::parse(resp->getContent());
+                            callback(ptr);
+                        }
+                        else
+                        {
+                            callback(nullptr);
+                        }
                     }
                     catch (...)
                     {
@@ -76,9 +83,8 @@ void NsqLookupd::getNodes(uv::SocketAddr& addr,OnGetNodesCallback callback)
         {
             try
             {
-                nlohmann::json root;
-                auto nodesCnt = root["producers"].size();
-                auto& producers = root["producers"];
+                auto nodesCnt = (*jsonData)["producers"].size();
+                auto& producers = (*jsonData)["producers"];
                 NsqNodesPtr ptr = std::make_shared<std::vector<NsqNode>>();
                 for (auto i = 0; i < nodesCnt; i++)
                 {
@@ -102,70 +108,4 @@ void NsqLookupd::getNodes(std::string ip, uint16_t port, OnGetNodesCallback call
 {
     uv::SocketAddr addr(ip, port, ipv);
     getNodes(addr, callback);
-}
-
-int nsq::NsqLookupd::Get(std::string&& url, nlohmann::json& out)
-{
-    std::string header;
-    std::string context;
-    NsqLookupd::CurlGet(std::move(url), header, context);
-    try
-    {
-        out = nlohmann::json::parse(context);
-        return 0;
-    }
-    catch (...)
-    {
-        uv::LogWriter::Instance()->error("parse node's json fail.");
-        return -1;
-    }
-}
-
-
-
-int nsq::NsqLookupd::GetNodes(std::string&& url, std::vector<NsqNode>& nodes)
-{
-    std::string header;
-    std::string context;
-    auto code = NsqLookupd::CurlGet(std::move(url), header, context);
-
-    nlohmann::json root;
-    auto rst = NsqLookupd::Get(std::move(url), root);
-    if (0 == rst)
-    {
-        try 
-        {
-            auto nodesCnt = root["producers"].size();
-            auto& producers = root["producers"];
-            for (auto i = 0; i < nodesCnt; i++)
-            {
-                NsqNode node;
-                node.remoteaddr = producers[i]["remote_address"].get<std::string>();
-                node.httpport = producers[i]["http_port"].get<uint16_t>();
-                node.tcpport = producers[i]["tcp_port"].get<uint16_t>();
-                nodes.push_back(node);
-            }
-        }
-        catch (...)
-        {
-            return -1;
-        }
-    }
-    return rst;
-}
-
-long NsqLookupd::CurlGet(std::string&& url, std::string& header, std::string& resp)
-{
-    base::EasyCurl http;
-    http.setopt(CURLOPT_URL, url.c_str());
-
-    http.setopt(CURLOPT_WRITEFUNCTION, base::EasyCurl::WriteCallback);
-    http.setopt(CURLOPT_WRITEDATA, &resp);
-    http.setopt(CURLOPT_HEADERDATA, &header);
-
-    long code;
-    http.getinfo(CURLINFO_RESPONSE_CODE, &code);
-
-    http.perform();
-    return code;
 }

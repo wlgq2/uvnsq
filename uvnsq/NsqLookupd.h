@@ -26,6 +26,7 @@ struct NsqNode
     uint16_t tcpport;
     uint16_t httpport;
 };
+
 using JsonPtr = std::shared_ptr<nlohmann::json>;
 using NsqNodesPtr = std::shared_ptr<std::vector<NsqNode>>;
 using OnLookupCallback = std::function<void(JsonPtr)>;
@@ -39,14 +40,9 @@ public:
     void getNodes(uv::SocketAddr& addr,  OnGetNodesCallback callback);
     void getNodes(std::string ip, uint16_t port, OnGetNodesCallback callback, uv::SocketAddr::IPV ipv = uv::SocketAddr::Ipv4);
 
-    static int Get(std::string&& url, nlohmann::json& out);
-    
-    static int  GetNodes(std::string&& url, std::vector<NsqNode>& nodes);
 
 private:
     uv::EventLoop* loop_;
-    
-    static long CurlGet(std::string&& url, std::string& header, std::string& resp);
 };
 
 }
