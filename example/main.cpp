@@ -51,15 +51,24 @@ int main(int argc, char** args)
     std::vector<NsqNode> nodes;
     auto code = NsqLookupd::GetNodes("http://127.0.0.1:4161/nodes", nodes);   
 
-    if (!nodes.empty())
+    uv::EventLoop loop;
+    nsq::NsqLookupd lookup(&loop);
+
+    lookup.getNodes("127.0.0.1", 4161, [](nsq::NsqNodesPtr ptr) 
     {
-        std::string serverip("127.0.0.1");
-        uint16_t port = nodes.front().tcpport;
-        std::vector<std::string> channels{ "ch1","ch2","ch3" };
-        std::thread t1(std::bind(std::bind(&runConsumers, serverip, port, channels)));
-        std::thread t2(std::bind(std::bind(&runProducer, serverip, port)));
-        t1.join();
-        t2.join();
-    }
+        if (nullptr != ptr && !ptr->empty())
+        {
+            std::string serverip("127.0.0.1");
+            uint16_t port = ptr->front().tcpport;
+            std::vector<std::string> channels{ "ch1","ch2","ch3" };
+            std::thread t1(std::bind(std::bind(&runConsumers, serverip, port, channels)));
+            std::thread t2(std::bind(std::bind(&runProducer, serverip, port)));
+            t1.join();
+            t2.join();
+        }
+    });
+    loop.run();
+
+
 }
 

@@ -11,7 +11,8 @@
 #ifndef   NSQ_EASY_CURL_H
 #define   NSQ_EASY_CURL_H
 
-#include <curl/curl.h>
+
+#include "../curl/include/curl/curl.h"
 
 namespace base 
 {
