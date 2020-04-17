@@ -22,7 +22,7 @@ NsqLookupd::NsqLookupd(uv::EventLoop* loop)
 
 void NsqLookupd::get(uv::SocketAddr& addr, std::string path, OnLookupCallback callback)
 {
-    loop_->runInThisLoop([this,callback,addr,path]() 
+    loop_->runInThisLoop([this,callback,addr,path]()
     {
         uv::http::HttpClient* client = new uv::http::HttpClient(loop_);
         uv::http::Request req;
@@ -61,7 +61,7 @@ void NsqLookupd::get(uv::SocketAddr& addr, std::string path, OnLookupCallback ca
             }
             delete client;
         });
-        client->Req((uv::SocketAddr)addr, req);
+        client->Req(const_cast<uv::SocketAddr&>(addr), req);
     });
 }
 
@@ -86,7 +86,7 @@ void NsqLookupd::getNodes(uv::SocketAddr& addr,OnGetNodesCallback callback)
                 auto nodesCnt = (*jsonData)["producers"].size();
                 auto& producers = (*jsonData)["producers"];
                 NsqNodesPtr ptr = std::make_shared<std::vector<NsqNode>>();
-                for (auto i = 0; i < nodesCnt; i++)
+                for (uint64_t i = 0; i < nodesCnt; i++)
                 {
                     NsqNode node;
                     node.remoteaddr = producers[i]["remote_address"].get<std::string>();
