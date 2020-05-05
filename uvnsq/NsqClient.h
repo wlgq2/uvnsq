@@ -42,10 +42,10 @@ private:
 class NsqClient  : public uv::TcpClient
 {
 public:
-    NsqClient(uv::EventLoop* loop);
+    NsqClient(uv::EventLoop* loop, uv::SocketAddr& addr);
     virtual ~NsqClient();
     
-    void connectToNsq(uv::SocketAddr& addr);
+    void connectToNsq();
     void onMessage(const char* data, ssize_t size);
 
     void setOnNsqMessage(OnNsqMessage callback);
@@ -87,5 +87,6 @@ inline void NsqClient::sendProtocolDefault()
     sendProtocol(msg);
 }
 
+using NsqClientPtr = std::shared_ptr<NsqClient>;
 }
 #endif

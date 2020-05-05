@@ -13,10 +13,10 @@
 using namespace nsq;
 
 NsqProducer::NsqProducer(uv::EventLoop* loop, uv::SocketAddr& addr)
-    :client_(loop)
+    :client_(loop, addr)
 {
     client_.setOnNsqMessage(std::bind(&NsqProducer::onMessage, this, std::placeholders::_1));
-    client_.connectToNsq(addr);
+    client_.connectToNsq();
 }
 
 NsqProducer::~NsqProducer()

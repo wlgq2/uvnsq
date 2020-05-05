@@ -13,12 +13,12 @@
 using namespace nsq;
 
 NsqConsumer::NsqConsumer(uv::EventLoop* loop, std::string topic, std::string channel)
-    :client_(loop),
+    :loop_(loop),
     topic_(topic),
     channel_(channel),
     rdy_(1)
 {
-    client_.setOnNsqConnect(std::bind(&NsqConsumer::onConnect,this,std::placeholders::_1));
+    
 }
 
 NsqConsumer::~NsqConsumer()
@@ -26,32 +26,53 @@ NsqConsumer::~NsqConsumer()
 
 }
 
-void nsq::NsqConsumer::start(uv::SocketAddr& addr)
+void nsq::NsqConsumer::appendNsqd(uv::SocketAddr& addr)
 {
-    //re connent while disconnect...
-    client_.connectToNsq(addr);
+    auto client = std::make_shared<NsqClient>(loop_, addr);
+    client->setOnNsqConnect(std::bind(&NsqConsumer::onConnect, this, client,std::placeholders::_1));
+    clients_.push_back(client);
 }
 
-void  NsqConsumer::sub(std::string topic, std::string channel)
+void nsq::NsqConsumer::start()
+{
+    //re connent while disconnect...
+    for (auto client : clients_)
+    {
+        client->setOnNsqMessage([this, client](NsqMessage& message)
+        {
+            if (nullptr != onNsqMessage_)
+            {
+                onNsqMessage_(message);
+            }
+            fin(client,message.MsgID());
+        });
+        client->setOnNsqResp(onNsqResp_);
+        client->setOnNsqError(onNsqError_);
+        client->connectToNsq();
+    }
+    
+}
+
+void  NsqConsumer::sub(NsqClientPtr client, std::string topic, std::string channel)
 {
     CommandSUB msg;
     msg.topic = topic;
     msg.channel = channel;
-    client_.sendProtocol(msg);
+    client->sendProtocol(msg);
 }
 
-void  NsqConsumer::rdy(int count)
+void  NsqConsumer::rdy(NsqClientPtr client, int count)
 {
     CommandRDY msg;
     msg.count = count;
-    client_.sendProtocol(msg);
+    client->sendProtocol(msg);
 }
 
-void nsq::NsqConsumer::fin(std::string& id)
+void nsq::NsqConsumer::fin(NsqClientPtr client, std::string& id)
 {
     CommandFIN command;
     command.msgid = id;
-    client_.sendProtocol(command);
+    client->sendProtocol(command);
 }
 
 void NsqConsumer::setRdy(int count)
@@ -61,25 +82,25 @@ void NsqConsumer::setRdy(int count)
 
 void nsq::NsqConsumer::setOnNsqMessage(OnNsqMessage callback)
 {
-    client_.setOnNsqMessage(callback);
+    onNsqMessage_ = callback;
 }
 
 void nsq::NsqConsumer::setOnNsqResp(OnNsqResp callback)
 {
-    client_.setOnNsqResp(callback);
+    onNsqResp_ = callback;
 }
 
 void nsq::NsqConsumer::setOnNsqError(OnNsqError callback)
 {
-    client_.setOnNsqError(callback);
+    onNsqError_ = callback;
 }
 
-void nsq::NsqConsumer::onConnect(uv::TcpClient::ConnectStatus status)
+void nsq::NsqConsumer::onConnect(NsqClientPtr client,uv::TcpClient::ConnectStatus status)
 {
     if (status == uv::TcpClient::OnConnectSuccess)
     {
-        sub(topic_, channel_);
-        rdy(rdy_);
+        sub(client,topic_, channel_);
+        rdy(client,rdy_);
     }
 }
 

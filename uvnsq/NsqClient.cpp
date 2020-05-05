@@ -16,8 +16,9 @@ using namespace uv;
 using namespace std;
 using namespace nsq;
 
-NsqClient::NsqClient(EventLoop* loop)
+NsqClient::NsqClient(EventLoop* loop, uv::SocketAddr& addr)
     :TcpClient(loop),
+    addr_(std::make_shared<uv::SocketAddr>(addr)),
     onMessage_(nullptr),
     onResp_(nullptr),
     onError_(nullptr)
@@ -32,9 +33,8 @@ NsqClient::~NsqClient()
 
 }
 
-void nsq::NsqClient::connectToNsq(uv::SocketAddr& addr)
+void nsq::NsqClient::connectToNsq()
 {
-    addr_ = std::make_shared<uv::SocketAddr>(addr);
     connect(*addr_);
 }
 
