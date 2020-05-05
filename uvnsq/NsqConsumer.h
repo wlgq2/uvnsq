@@ -17,17 +17,11 @@
 
 namespace nsq
 { 
- 
-struct TopicAndChannel
-{
-    std::string topic;
-    std::string channel;
-};
 
 class NsqConsumer
 {
 public:
-    NsqConsumer(uv::EventLoop* loop);
+    NsqConsumer(uv::EventLoop* loop, std::string topic, std::string channel);
     virtual ~NsqConsumer();
 
     void start(uv::SocketAddr& addr);
@@ -35,7 +29,6 @@ public:
     void rdy(int count);
     void fin(std::string& id);
 
-    void appendSub(std::string topic, std::string channel);
     void setRdy(int count);
 
     void setOnNsqMessage(OnNsqMessage callback);
@@ -45,7 +38,8 @@ public:
     
 private:
     NsqClient client_;
-    std::vector<TopicAndChannel> subs_;
+    std::string topic_;
+    std::string channel_;
     int rdy_;
 };
 

@@ -26,8 +26,7 @@ void runConsumers(std::string ip, uint16_t port,std::vector<std::string> channel
     uv::SocketAddr addr(ip, port);
     for (auto& channel : channels)
     {
-        std::shared_ptr<NsqConsumer> consumer(new NsqConsumer(&loop));
-        consumer->appendSub("test", channel);
+        std::shared_ptr<NsqConsumer> consumer(new NsqConsumer(&loop,"test", channel));
         consumer->setRdy(64);
         consumer->setOnNsqMessage(
             [consumer, channel](NsqMessage& message)
@@ -57,7 +56,7 @@ int main(int argc, char** args)
         {
             std::string serverip("127.0.0.1");
             uint16_t port = ptr->front().tcpport;
-            std::vector<std::string> channels{ "ch1","ch2","ch3" };
+            std::vector<std::string> channels{ "ch1" , "ch2", "ch3"};
             std::thread t1(std::bind(std::bind(&runConsumers, serverip, port, std::ref(channels))));
             std::thread t2(std::bind(std::bind(&runProducer, serverip, port)));
             t1.detach();

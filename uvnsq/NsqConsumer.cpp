@@ -12,8 +12,10 @@
 
 using namespace nsq;
 
-NsqConsumer::NsqConsumer(uv::EventLoop* loop)
+NsqConsumer::NsqConsumer(uv::EventLoop* loop, std::string topic, std::string channel)
     :client_(loop),
+    topic_(topic),
+    channel_(channel),
     rdy_(1)
 {
     client_.setOnNsqConnect(std::bind(&NsqConsumer::onConnect,this,std::placeholders::_1));
@@ -52,11 +54,6 @@ void nsq::NsqConsumer::fin(std::string& id)
     client_.sendProtocol(command);
 }
 
-void NsqConsumer::appendSub(std::string topic, std::string channel)
-{
-    subs_.push_back({ topic,channel });
-}
-
 void NsqConsumer::setRdy(int count)
 {
     rdy_ = count;
@@ -81,10 +78,7 @@ void nsq::NsqConsumer::onConnect(uv::TcpClient::ConnectStatus status)
 {
     if (status == uv::TcpClient::OnConnectSuccess)
     {
-        for (auto& subinfo : subs_)
-        {
-            sub(subinfo.topic, subinfo.channel);
-        }
+        sub(topic_, channel_);
         rdy(rdy_);
     }
 }
