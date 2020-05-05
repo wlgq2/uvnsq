@@ -16,13 +16,13 @@ void runProducer(nsq::NsqNodesPtr nodes)
     {
         uv::SocketAddr addr(serverip, node.tcpport);
         producers.push_back(std::make_shared<NsqProducer>(&loop, addr));
-        messages.push_back(std::string("a message from ") + addr.toStr()); 
+        messages.push_back(std::string("a message from ") + addr.toStr());
     }
-    
+
     uv::Timer timer(&loop, 1500, 3000, [&producers, messages](uv::Timer* timer)
     {
         std::string topic("test");
-        for (auto i = 0;i < producers.size();i++)
+        for (size_t i = 0;i < producers.size();i++)
         {
             std::string& str = const_cast<std::string&>(messages[i]);
             producers[i]->pub(topic, str);
@@ -37,7 +37,7 @@ void runConsumers(nsq::NsqNodesPtr nodes,std::vector<std::string> channels)
 {
     uv::EventLoop loop;
     std::string serverip("127.0.0.1");
-    
+
     for (auto& channel : channels)
     {
         std::shared_ptr<NsqConsumer> consumer(new NsqConsumer(&loop,"test", channel));
@@ -64,15 +64,15 @@ void runConsumers(nsq::NsqNodesPtr nodes,std::vector<std::string> channels)
 int main(int argc, char** args)
 {
     uv::LogWriter::Instance()->setLevel(uv::LogWriter::Info);
-    
+
     uv::EventLoop loop;
     nsq::NsqLookupd lookup(&loop);
 
-    lookup.getNodes("127.0.0.1", 4161, [](nsq::NsqNodesPtr ptr) 
+    lookup.getNodes("127.0.0.1", 4161, [](nsq::NsqNodesPtr ptr)
     {
         if (nullptr != ptr && !ptr->empty())
-        {       
-            
+        {
+
             std::vector<std::string> channels{ "ch1" , "ch2"};
             std::thread t1(std::bind(std::bind(&runConsumers, ptr, std::ref(channels))));
             std::thread t2(std::bind(std::bind(&runProducer, ptr)));
