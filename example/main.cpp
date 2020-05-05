@@ -10,12 +10,23 @@ void runProducer(nsq::NsqNodesPtr nodes)
 {
     uv::EventLoop loop;
     std::string serverip("127.0.0.1");
-    uint16_t port = nodes->front().tcpport;
-    uv::SocketAddr addr(serverip, port);
-    NsqProducer producer(&loop, addr);
-    uv::Timer timer(&loop, 1000, 2000, [&producer](uv::Timer* timer)
+    std::vector<NsqProducerPtr> producers;
+    std::vector<std::string> messages;
+    for (auto& node : *nodes)
     {
-        producer.pub("test", "test message.");
+        uv::SocketAddr addr(serverip, node.tcpport);
+        producers.push_back(std::make_shared<NsqProducer>(&loop, addr));
+        messages.push_back(std::string("a message from ") + addr.toStr()); 
+    }
+    
+    uv::Timer timer(&loop, 1500, 3000, [&producers, messages](uv::Timer* timer)
+    {
+        std::string topic("test");
+        for (auto i = 0;i < producers.size();i++)
+        {
+            std::string& str = const_cast<std::string&>(messages[i]);
+            producers[i]->pub(topic, str);
+        }
     });
     timer.start();
     loop.run();
@@ -62,7 +73,7 @@ int main(int argc, char** args)
         if (nullptr != ptr && !ptr->empty())
         {       
             
-            std::vector<std::string> channels{ "ch1" , "ch2", "ch3"};
+            std::vector<std::string> channels{ "ch1" , "ch2"};
             std::thread t1(std::bind(std::bind(&runConsumers, ptr, std::ref(channels))));
             std::thread t2(std::bind(std::bind(&runProducer, ptr)));
             t1.detach();

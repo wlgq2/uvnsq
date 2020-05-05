@@ -29,6 +29,6 @@ public:
 private:
     NsqClient client_;
 };
-
+using NsqProducerPtr = std::shared_ptr<NsqProducer>;
 }
 #endif
