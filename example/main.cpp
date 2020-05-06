@@ -38,9 +38,11 @@ void runConsumers(nsq::NsqNodesPtr nodes,std::vector<std::string> channels)
     uv::EventLoop loop;
     std::string serverip("127.0.0.1");
 
+    std::vector<NsqConsumerPtr> consumers;
     for (auto& channel : channels)
     {
-        std::shared_ptr<NsqConsumer> consumer(new NsqConsumer(&loop,"test", channel));
+        NsqConsumerPtr consumer(new NsqConsumer(&loop,"test", channel));
+        consumers.push_back(consumer);
         for (auto& node : *nodes)
         {
             uv::SocketAddr addr(serverip, node.tcpport);
@@ -48,7 +50,7 @@ void runConsumers(nsq::NsqNodesPtr nodes,std::vector<std::string> channels)
         }
         consumer->setRdy(64);
         consumer->setOnNsqMessage(
-            [consumer, channel](NsqMessage& message)
+            [channel](NsqMessage& message)
         {
             std::cout<<channel<< " receive" <<" attempts * " << message.Attempts() << " :" << message.MsgBody() << std::endl;
             std::string info("hex: ");
@@ -57,6 +59,14 @@ void runConsumers(nsq::NsqNodesPtr nodes,std::vector<std::string> channels)
         });
         consumer->start();
     }
+
+    uv::Timer timer(&loop, 15000, 0, [&consumers](uv::Timer* timer)
+    {
+        //delete all consumers.
+        //std::cout << "delete and close tcp connection." << std::endl;
+        //consumers.clear();
+    });
+    timer.start();
 
     loop.run();
 }

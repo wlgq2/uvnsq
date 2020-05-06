@@ -27,19 +27,20 @@ public:
     void appendNsqd(uv::SocketAddr& addr);
 
     void start();
-    void sub(NsqClientPtr client, std::string topic, std::string channel);
-    void rdy(NsqClientPtr client, int count);
-    void fin(NsqClientPtr client, std::string& id);
+    void sub(NsqClient* client, std::string topic, std::string channel);
+    void rdy(NsqClient* client, int count);
+    void fin(NsqClient* client, std::string& id);
 
     void setRdy(int count);
 
     void setOnNsqMessage(OnNsqMessage callback);
     void setOnNsqResp(OnNsqResp callback);
     void setOnNsqError(OnNsqError callback);
-    void onConnect(NsqClientPtr client,uv::TcpClient::ConnectStatus status);
+    void onConnect(NsqClient* client,uv::TcpClient::ConnectStatus status);
     
 private:
     uv::EventLoop* loop_;
+    bool isRun_;
     std::vector<NsqClientPtr> clients_;
     std::string topic_;
     std::string channel_;
@@ -49,5 +50,6 @@ private:
     OnNsqError onNsqError_;
 };
 
+using NsqConsumerPtr = std::shared_ptr<NsqConsumer>;
 }
 #endif

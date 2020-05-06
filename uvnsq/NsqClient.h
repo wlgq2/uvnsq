@@ -65,7 +65,6 @@ private:
     bool ifOnHeartbeat(std::string& body);
 
     std::shared_ptr<uv::SocketAddr> addr_;
-    bool isRun_;
     uv::TcpClient* client_;
     OnNsqMessage onMessage_;
     OnNsqResp onResp_;

@@ -18,7 +18,6 @@ using namespace nsq;
 
 NsqClient::NsqClient(EventLoop* loop, uv::SocketAddr& addr)
     :addr_(std::make_shared<uv::SocketAddr>(addr)),
-    isRun_(false),
     client_(nullptr),
     onMessage_(nullptr),
     onResp_(nullptr),
@@ -32,9 +31,7 @@ NsqClient::NsqClient(EventLoop* loop, uv::SocketAddr& addr)
 
 NsqClient::~NsqClient()
 {
-    isRun_ = false;
-    auto client = client_;
-    client->close([this, client](std::string&)
+    client_->close([this](uv::TcpClient* client)
     {
         delete client;
     });
