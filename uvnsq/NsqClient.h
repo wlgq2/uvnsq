@@ -39,7 +39,7 @@ private:
         uv::GlobalConfig::ReadBufferVoid = std::bind(&DataFormat::decodePacketBuf, std::placeholders::_1, std::placeholders::_2);
     }
 };
-class NsqClient  : public uv::TcpClient
+class NsqClient 
 {
 public:
     NsqClient(uv::EventLoop* loop, uv::SocketAddr& addr);
@@ -51,7 +51,7 @@ public:
     void setOnNsqMessage(OnNsqMessage callback);
     void setOnNsqResp(OnNsqResp callback);
     void setOnNsqError(OnNsqError callback);
-    void setOnNsqConnect(ConnectStatusCallback callback);
+    void setOnNsqConnect(uv::TcpClient::ConnectStatusCallback callback);
 
     template<typename Protocol>
     void sendProtocol(Protocol& msg);
@@ -65,11 +65,13 @@ private:
     bool ifOnHeartbeat(std::string& body);
 
     std::shared_ptr<uv::SocketAddr> addr_;
+    bool isRun_;
+    uv::TcpClient* client_;
     OnNsqMessage onMessage_;
     OnNsqResp onResp_;
     OnNsqError onError_;
 
-    ConnectStatusCallback nextCallback_;
+    uv::TcpClient::ConnectStatusCallback nextCallback_;
 };
 
 template<typename Protocol>
@@ -77,7 +79,7 @@ inline void NsqClient::sendProtocol(Protocol& msg)
 {
     std::string data;
     msg.pack(data);
-    write(data.c_str(), (unsigned)(data.size()));
+    client_->write(data.c_str(), (unsigned)(data.size()));
 }
 
 template<typename Protocol>

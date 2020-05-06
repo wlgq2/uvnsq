@@ -17,25 +17,32 @@ using namespace std;
 using namespace nsq;
 
 NsqClient::NsqClient(EventLoop* loop, uv::SocketAddr& addr)
-    :TcpClient(loop),
-    addr_(std::make_shared<uv::SocketAddr>(addr)),
+    :addr_(std::make_shared<uv::SocketAddr>(addr)),
+    isRun_(false),
+    client_(nullptr),
     onMessage_(nullptr),
     onResp_(nullptr),
     onError_(nullptr)
 {
     UvConfig::RunOnce();
-    setConnectStatusCallback(std::bind(&NsqClient::onConnectStatus, this, std::placeholders::_1));
-    setMessageCallback(std::bind(&NsqClient::onMessage,this ,placeholders::_1, placeholders::_2));
+    client_ = new uv::TcpClient(loop);
+    client_->setConnectStatusCallback(std::bind(&NsqClient::onConnectStatus, this, std::placeholders::_1));
+    client_->setMessageCallback(std::bind(&NsqClient::onMessage,this ,placeholders::_1, placeholders::_2));
 }
 
 NsqClient::~NsqClient()
 {
-
+    isRun_ = false;
+    auto client = client_;
+    client->close([this, client](std::string&)
+    {
+        delete client;
+    });
 }
 
 void nsq::NsqClient::connectToNsq()
 {
-    connect(*addr_);
+    client_->connect(*addr_);
 }
 
 void NsqClient::onMessage(const char* data, ssize_t size)
@@ -50,7 +57,7 @@ void NsqClient::onMessage(const char* data, ssize_t size)
     uv::LogWriter::ToHex(logInfo, data, (unsigned)size);
     uv::LogWriter::Instance()->debug(logInfo);
     
-    auto packbuf = getCurrentBuf();
+    auto packbuf = client_->getCurrentBuf();
     if (packbuf != nullptr)
     {
         if (packbuf->append(data, (int)size) < 0)
@@ -124,7 +131,7 @@ void nsq::NsqClient::setOnNsqError(OnNsqError callback)
     onError_ = callback;
 }
 
-void NsqClient::setOnNsqConnect(ConnectStatusCallback callback)
+void NsqClient::setOnNsqConnect(uv::TcpClient::ConnectStatusCallback callback)
 {
     nextCallback_ = callback;
 }
@@ -134,9 +141,9 @@ void NsqClient::onConnectStatus(TcpClient::ConnectStatus status)
     if (status != TcpClient::ConnectStatus::OnConnectSuccess)
     {
         uv::LogWriter::Instance()->warn("disconnect from sever and retry...");
-        Timer* ptr = new Timer(Loop(), 1500, 0, [this](Timer* ptr)
+        Timer* ptr = new Timer(client_->Loop(), 1500, 0, [this](Timer* ptr)
         {
-            connect(*addr_);
+            client_->connect(*addr_);
             ptr->close([this](Timer* ptr)
             {
                 delete ptr;
