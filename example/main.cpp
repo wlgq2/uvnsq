@@ -41,30 +41,31 @@ void runConsumers(nsq::NsqNodesPtr nodes,std::vector<std::string> channels)
     std::vector<NsqConsumerPtr> consumers;
     for (auto& channel : channels)
     {
-        NsqConsumerPtr consumer(new NsqConsumer(&loop,"test", channel));
-        consumers.push_back(consumer);
+
         for (auto& node : *nodes)
         {
+            NsqConsumerPtr consumer(new NsqConsumer(&loop, "test", channel));
+            consumers.push_back(consumer);
             uv::SocketAddr addr(serverip, node.tcpport);
-            consumer->appendNsqd(addr);
+            consumer->setNsqd(addr);
+            consumer->setRdy(64);
+            consumer->setOnNsqMessage(
+                [channel](NsqMessage& message)
+            {
+                std::cout << channel << " receive" << " attempts * " << message.Attempts() << " :" << message.MsgBody() << std::endl;
+                std::string info("hex: ");
+                uv::LogWriter::ToHex(info, message.MsgID());
+                std::cout << info << "\n" << std::endl;
+            });
+            consumer->start();
         }
-        consumer->setRdy(64);
-        consumer->setOnNsqMessage(
-            [channel](NsqMessage& message)
-        {
-            std::cout<<channel<< " receive" <<" attempts * " << message.Attempts() << " :" << message.MsgBody() << std::endl;
-            std::string info("hex: ");
-            uv::LogWriter::ToHex(info, message.MsgID());
-            std::cout << info<<"\n" << std::endl;
-        });
-        consumer->start();
     }
 
     uv::Timer timer(&loop, 15000, 0, [&consumers](uv::Timer* timer)
     {
         //delete all consumers.
-        //std::cout << "delete and close tcp connection." << std::endl;
-        //consumers.clear();
+        std::cout << "delete and close tcp connection." << std::endl;
+        consumers.front() = nullptr;;
     });
     timer.start();
 
