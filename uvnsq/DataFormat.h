@@ -13,7 +13,7 @@
 #define   NSQ_DATA_FORMAT_H
 
 #include <string>
-#include <uv/include/uv11.h>
+#include <uv/include/uv11.hpp>
 
 namespace nsq
 { 

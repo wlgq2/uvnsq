@@ -15,7 +15,7 @@
 #include <vector>
 #include <memory>
 #include <json/json.hpp>
-#include <uv/include/uv11.h>
+#include <uv/include/uv11.hpp>
 
 namespace nsq 
 {

@@ -11,7 +11,7 @@
 #ifndef   NSQ_CLIENT_H
 #define   NSQ_CLIENT_H
 
-#include  <uv/include/uv11.h>
+#include  <uv/include/uv11.hpp>
 #include  <functional>
 #include  "NsqMessage.h"
 #include  "DataFormat.h"
